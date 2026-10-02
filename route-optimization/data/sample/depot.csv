@@ -1,0 +1,6 @@
+NO_DEPOT,NOM,VILLE,ADRESSE,CP,LON,LAT,ZONE
+1,Depot Petrolier Gennevilliers,Gennevilliers,25 Route du Bassin,92230,2.313,48.933,IDF
+2,Depot Petrolier Rungis,Rungis,ZI de Rungis,94150,2.349,48.749,IDF
+3,Depot Petrolier Compiegne,Compiegne,Zone Industrielle,60200,2.826,49.418,PICARDIE
+4,Depot Petrolier Nanterre,Nanterre,Quai du President Paul Doumer,92000,2.207,48.892,IDF
+5,Depot Petrolier Creil,Creil,Zone Portuaire,60100,2.484,49.258,PICARDIE

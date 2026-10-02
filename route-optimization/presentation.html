@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimisation de Tournées — Solution Snowflake</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sf-blue: #29B5E8;
+            --sf-dark-blue: #1B3A4B;
+            --sf-navy: #0D2233;
+            --sf-light-blue: #E8F7FC;
+            --sf-accent: #11A7DB;
+            --sf-white: #FFFFFF;
+            --sf-gray-50: #F8FAFC;
+            --sf-gray-100: #F1F5F9;
+            --sf-gray-200: #E2E8F0;
+            --sf-gray-300: #CBD5E1;
+            --sf-gray-400: #94A3B8;
+            --sf-gray-500: #64748B;
+            --sf-gray-600: #475569;
+            --sf-gray-700: #334155;
+            --sf-gray-800: #1E293B;
+            --sf-gray-900: #0F172A;
+            --sf-green: #10B981;
+            --sf-green-light: #D1FAE5;
+            --sf-orange: #F59E0B;
+            --sf-orange-light: #FEF3C7;
+            --sf-red: #EF4444;
+            --sf-red-light: #FEE2E2;
+            --sf-purple: #8B5CF6;
+            --sf-purple-light: #EDE9FE;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 20px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.08);
+            --shadow-xl: 0 20px 60px rgba(0,0,0,0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--sf-gray-50);
+            color: var(--sf-gray-800);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            background: linear-gradient(160deg, #0a1628 0%, #0f2540 30%, #163a5c 60%, #1a4a6b 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 80px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 50%, rgba(41,181,232,0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 70% 80%, rgba(139,92,246,0.05) 0%, transparent 40%);
+            animation: pulse 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(1.05) rotate(2deg); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 850px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(41,181,232,0.12);
+            border: 1px solid rgba(41,181,232,0.3);
+            border-radius: 40px;
+            padding: 8px 20px;
+            margin-bottom: 40px;
+            font-size: 0.85em;
+            color: var(--sf-blue);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.8em, 6vw, 4.5em);
+            font-weight: 800;
+            color: white;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -2px;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--sf-blue), #6DD5FA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25em;
+            color: rgba(255,255,255,0.6);
+            max-width: 650px;
+            margin: 0 auto 50px;
+            font-weight: 300;
+            line-height: 1.6;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 50px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .hero-stat {
+            text-align: center;
+        }
+
+        .hero-stat-value {
+            font-size: 2.8em;
+            font-weight: 800;
+            color: var(--sf-blue);
+            line-height: 1;
+        }
+
+        .hero-stat-label {
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.45);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        /* ===== SECTIONS ===== */
+        section {
+            padding: 120px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--sf-blue);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 16px;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 24px;
+            height: 2px;
+            background: var(--sf-blue);
+            border-radius: 2px;
+        }
+
+        section h2 {
+            font-size: clamp(2em, 4vw, 2.8em);
+            font-weight: 800;
+            color: var(--sf-gray-900);
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+            line-height: 1.2;
+        }
+
+        section .section-intro {
+            font-size: 1.15em;
+            color: var(--sf-gray-500);
+            max-width: 700px;
+            margin-bottom: 50px;
+            font-weight: 400;
+        }
+
+        /* ===== FULL-WIDTH DARK SECTIONS ===== */
+        .dark-section {
+            background: linear-gradient(160deg, var(--sf-navy) 0%, var(--sf-dark-blue) 100%);
+            max-width: 100%;
+            padding: 120px 40px;
+            color: white;
+        }
+
+        .dark-section .inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .dark-section .section-label { color: var(--sf-blue); }
+        .dark-section .section-label::before { background: var(--sf-blue); }
+        .dark-section h2 { color: white; }
+        .dark-section .section-intro { color: rgba(255,255,255,0.55); }
+
+        /* ===== CARDS ===== */
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+        @media (max-width: 900px) {
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--sf-white);
+            border-radius: var(--radius);
+            padding: 32px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--sf-gray-200);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .card-dark {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        .card-dark:hover {
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(41,181,232,0.3);
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4em;
+            margin-bottom: 20px;
+        }
+
+        .card-icon-blue { background: rgba(41,181,232,0.1); }
+        .card-icon-green { background: rgba(16,185,129,0.1); }
+        .card-icon-orange { background: rgba(245,158,11,0.1); }
+        .card-icon-purple { background: rgba(139,92,246,0.1); }
+        .card-icon-red { background: rgba(239,68,68,0.1); }
+
+        .card h4 {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: var(--sf-gray-900);
+            margin-bottom: 10px;
+        }
+
+        .card-dark h4 { color: white; }
+
+        .card p {
+            font-size: 0.9em;
+            color: var(--sf-gray-500);
+            line-height: 1.6;
+        }
+
+        .card-dark p { color: rgba(255,255,255,0.55); }
+
+        /* ===== FEATURE BLOCKS ===== */
+        .feature-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            margin: 80px 0;
+        }
+
+        .feature-block.reverse { direction: rtl; }
+        .feature-block.reverse > * { direction: ltr; }
+
+        .feature-text h3 {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: var(--sf-gray-900);
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .feature-text p {
+            font-size: 1em;
+            color: var(--sf-gray-500);
+            margin-bottom: 20px;
+        }
+
+        .feature-visual {
+            background: var(--sf-white);
+            border-radius: var(--radius);
+            padding: 40px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--sf-gray-200);
+        }
+
+        /* ===== METRICS ===== */
+        .metric-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin: 40px 0;
+        }
+
+        .metric-card {
+            text-align: center;
+            padding: 30px 20px;
+            background: var(--sf-white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--sf-gray-200);
+        }
+
+        .metric-card-value {
+            font-size: 2.5em;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .metric-card-label {
+            font-size: 0.8em;
+            color: var(--sf-gray-500);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== TIMELINE / STEPS ===== */
+        .steps {
+            position: relative;
+            padding-left: 50px;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            left: 19px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--sf-blue), var(--sf-purple));
+            border-radius: 2px;
+        }
+
+        .step {
+            position: relative;
+            margin-bottom: 40px;
+            padding-left: 30px;
+        }
+
+        .step::before {
+            content: '';
+            position: absolute;
+            left: -31px;
+            top: 6px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--sf-blue);
+            box-shadow: 0 0 0 4px rgba(41,181,232,0.2);
+        }
+
+        .step h4 {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: var(--sf-gray-900);
+            margin-bottom: 6px;
+        }
+
+        .step p {
+            font-size: 0.95em;
+            color: var(--sf-gray-500);
+        }
+
+        /* ===== FORMULA BOX ===== */
+        .formula-box {
+            background: linear-gradient(135deg, var(--sf-navy) 0%, var(--sf-dark-blue) 100%);
+            border-radius: var(--radius);
+            padding: 40px 50px;
+            margin: 40px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .formula {
+            font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+            font-size: 1.4em;
+            font-weight: 600;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .formula span { color: var(--sf-blue); }
+
+        .formula-desc {
+            font-size: 0.9em;
+            color: rgba(255,255,255,0.5);
+        }
+
+        /* ===== ARCHITECTURE DIAGRAM ===== */
+        .arch-diagram {
+            background: linear-gradient(160deg, #0a1628 0%, #132d47 100%);
+            border-radius: var(--radius);
+            padding: 50px;
+            margin: 40px 0;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .arch-layer {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .arch-label {
+            min-width: 130px;
+            font-size: 0.75em;
+            font-weight: 600;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .arch-node {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .arch-node-blue { background: rgba(41,181,232,0.15); border: 1px solid rgba(41,181,232,0.4); color: var(--sf-blue); }
+        .arch-node-green { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); color: var(--sf-green); }
+        .arch-node-orange { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); color: var(--sf-orange); }
+        .arch-node-purple { background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.35); color: var(--sf-purple); }
+        .arch-node-bright { background: var(--sf-blue); color: white; border: none; }
+
+        .arch-connector {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(41,181,232,0.2), transparent);
+            margin: 12px 0;
+        }
+
+        .arch-arrow-down {
+            text-align: center;
+            color: rgba(255,255,255,0.2);
+            font-size: 1.2em;
+            margin: 8px 0;
+        }
+
+        /* ===== GA VISUALIZATION ===== */
+        .ga-visual {
+            background: var(--sf-white);
+            border-radius: var(--radius);
+            padding: 40px;
+            border: 1px solid var(--sf-gray-200);
+            box-shadow: var(--shadow-md);
+        }
+
+        .ga-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 12px 0;
+        }
+
+        .ga-bar-label {
+            min-width: 90px;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--sf-gray-400);
+            text-align: right;
+        }
+
+        .ga-bar-track {
+            flex: 1;
+            height: 32px;
+            background: var(--sf-gray-100);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .ga-bar-fill {
+            height: 100%;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            font-size: 0.78em;
+            font-weight: 700;
+            color: white;
+            transition: width 1s ease;
+        }
+
+        /* ===== COMPARISON TABLE ===== */
+        .comparison-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            margin: 40px 0;
+        }
+
+        .comparison-table thead {
+            background: var(--sf-gray-900);
+        }
+
+        .comparison-table th {
+            padding: 16px 24px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .comparison-table td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--sf-gray-100);
+            font-size: 0.9em;
+            color: var(--sf-gray-700);
+            background: white;
+        }
+
+        .comparison-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tbody tr:hover td {
+            background: var(--sf-light-blue);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .badge-green { background: var(--sf-green-light); color: #065F46; }
+        .badge-red { background: var(--sf-red-light); color: #991B1B; }
+
+        /* ===== FLOW DIAGRAM ===== */
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .flow-item {
+            padding: 14px 22px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85em;
+            font-weight: 600;
+            background: var(--sf-white);
+            border: 1px solid var(--sf-gray-200);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .flow-item.active {
+            background: var(--sf-blue);
+            color: white;
+            border-color: var(--sf-blue);
+        }
+
+        .flow-arrow {
+            color: var(--sf-gray-300);
+            font-size: 1.3em;
+        }
+
+        /* ===== CALLOUT ===== */
+        .callout {
+            background: linear-gradient(135deg, rgba(41,181,232,0.05), rgba(139,92,246,0.03));
+            border: 1px solid rgba(41,181,232,0.15);
+            border-radius: var(--radius);
+            padding: 24px 30px;
+            margin: 30px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .callout-icon {
+            font-size: 1.3em;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .callout p {
+            font-size: 0.95em;
+            color: var(--sf-gray-700);
+            margin: 0;
+        }
+
+        .callout strong { color: var(--sf-gray-900); }
+
+        /* ===== RESULTS COMPARISON ===== */
+        .results-block {
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            align-items: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .result-box {
+            background: var(--sf-white);
+            border-radius: var(--radius);
+            padding: 35px;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--sf-gray-200);
+        }
+
+        .result-box.before { border-top: 4px solid var(--sf-gray-300); }
+        .result-box.after { border-top: 4px solid var(--sf-green); }
+
+        .result-box-label {
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--sf-gray-400);
+            margin-bottom: 12px;
+        }
+
+        .result-box-value {
+            font-size: 2.5em;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .result-box.before .result-box-value { color: var(--sf-gray-400); }
+        .result-box.after .result-box-value { color: var(--sf-green); }
+
+        .result-vs {
+            font-size: 1.2em;
+            font-weight: 800;
+            color: var(--sf-gray-300);
+            text-align: center;
+        }
+
+        .result-gain {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .result-gain-value {
+            font-size: 3em;
+            font-weight: 900;
+            color: var(--sf-green);
+            letter-spacing: -2px;
+        }
+
+        .result-gain-label {
+            font-size: 0.85em;
+            color: var(--sf-gray-500);
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            background: var(--sf-gray-900);
+            padding: 80px 40px;
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+        }
+
+        footer h2 {
+            font-size: 2em;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        footer p {
+            font-size: 1em;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .footer-tags {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .footer-tag {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 500;
+            background: rgba(41,181,232,0.1);
+            border: 1px solid rgba(41,181,232,0.25);
+            color: var(--sf-blue);
+        }
+
+        /* ===== NAV DOT ===== */
+        .nav-dots {
+            position: fixed;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--sf-gray-300);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-dot:hover, .nav-dot.active {
+            background: var(--sf-blue);
+            transform: scale(1.3);
+        }
+
+        /* ===== SMOOTH SCROLLING ===== */
+        html { scroll-behavior: smooth; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            section, .dark-section { padding: 80px 24px; }
+            .hero { padding: 60px 24px; }
+            .hero-stats { gap: 30px; }
+            .feature-block, .feature-block.reverse { grid-template-columns: 1fr; gap: 30px; direction: ltr; }
+            .metric-row { grid-template-columns: repeat(2, 1fr); }
+            .results-block { grid-template-columns: 1fr; }
+            .result-vs { display: none; }
+            .nav-dots { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation dots -->
+<nav class="nav-dots">
+    <a class="nav-dot active" href="#hero" title="Introduction"></a>
+    <a class="nav-dot" href="#enjeux" title="Enjeux"></a>
+    <a class="nav-dot" href="#demarche" title="Demarche"></a>
+    <a class="nav-dot" href="#architecture" title="Architecture"></a>
+    <a class="nav-dot" href="#algorithme" title="Algorithme"></a>
+    <a class="nav-dot" href="#resultats" title="Resultats"></a>
+    <a class="nav-dot" href="#snowflake" title="Snowflake"></a>
+</nav>
+
+<!-- ============================= HERO ============================= -->
+<header class="hero" id="hero">
+    <div class="hero-content">
+        <div class="hero-badge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L12 22M2 12L22 12M4.93 4.93L19.07 19.07M19.07 4.93L4.93 19.07"/>
+            </svg>
+            Powered by Snowflake
+        </div>
+        <h1>Optimisation intelligente des <span>tournées de livraison</span></h1>
+        <p>Un algorithme génétique couplé à un solveur de référence pour planifier les tournées de flottes de camions-citernes multi-cuves — intégralement dans le cloud Snowflake.</p>
+    </div>
+</header>
+
+<!-- ============================= ENJEUX ============================= -->
+<section id="enjeux">
+    <div class="section-label">Comprendre le problème</div>
+    <h2>Un défi logistique au croisement de multiples contraintes</h2>
+    <p class="section-intro">La distribution de produits en citernes multi-compartiments n'est pas un simple calcul d'itinéraire GPS. C'est un problème combinatoire à deux étages, d'une complexité bien supérieure à ce qu'un planificateur humain peut résoudre optimalement.</p>
+
+    <div class="grid-2" style="margin-bottom: 50px;">
+        <div class="card">
+            <div class="card-icon card-icon-blue">&#128663;</div>
+            <h4>Problème n&deg;1 — La ventilation des cuves</h4>
+            <p><strong>Quel produit dans quelle cuve de quel camion ?</strong><br><br>
+            Chaque camion possède 3 à 5 compartiments pouvant contenir des produits différents. L'affectation change <strong>chaque jour</strong> en fonction de la demande. Un mauvais remplissage rend des livraisons impossibles ou génère des détours inutiles.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon card-icon-purple">&#128205;</div>
+            <h4>Problème n&deg;2 — Le routage des tournées</h4>
+            <p><strong>Quelle séquence de livraisons pour chaque camion ?</strong><br><br>
+            Une fois les cuves remplies, il faut planifier le parcours optimal : minimiser les km, respecter les fenêtres horaires des clients, ne pas dépasser l'amplitude de travail, et suivre le réseau autorisé aux poids-lourds.</p>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-icon">&#128161;</div>
+        <p><strong>Interdépendance critique :</strong> Ces deux problèmes sont liés. La ventilation conditionne les tournées possibles. Il faut les résoudre conjointement pour atteindre un optimum global — un camion correctement chargé économise des dizaines de km et libère de la capacité pour d'autres livraisons.</p>
+    </div>
+
+    <h3 style="font-size: 1.4em; font-weight: 700; margin: 50px 0 24px; color: var(--sf-gray-900);">Pourquoi c'est si complexe</h3>
+
+    <div class="grid-4">
+        <div class="card">
+            <div class="card-icon card-icon-red">&#128200;</div>
+            <h4>Explosion combinatoire</h4>
+            <p>15 camions &times; 4 cuves &times; 8 produits = des centaines de milliers de ventilations possibles</p>
+        </div>
+        <div class="card">
+            <div class="card-icon card-icon-orange">&#9200;</div>
+            <h4>Contraintes temporelles</h4>
+            <p>Fenêtres horaires clients, amplitude légale de 8h, temps de déchargement variable</p>
+        </div>
+        <div class="card">
+            <div class="card-icon card-icon-green">&#128679;</div>
+            <h4>Réseau contraint</h4>
+            <p>Les poids-lourds ne passent pas partout : ponts, tunnels, zones à faible émission</p>
+        </div>
+        <div class="card">
+            <div class="card-icon card-icon-purple">&#9888;&#65039;</div>
+            <h4>Compatibilités produit</h4>
+            <p>Certains produits exigent des cuves dédiées (ex: SP95). Le non-respect = risque sécurité</p>
+        </div>
+    </div>
+
+    <div class="callout" style="margin-top: 40px;">
+        <div class="callout-icon">&#128100;</div>
+        <p>Aujourd'hui, un planificateur passe <strong>plusieurs heures chaque matin</strong> à construire manuellement les tournées du jour. Le résultat est fonctionnel mais sous-optimal : trop de km, des clients non servis faute de produit dans le bon camion.</p>
+    </div>
+</section>
+
+<!-- ============================= DEMARCHE ============================= -->
+<div class="dark-section" id="demarche">
+    <div class="inner">
+        <div class="section-label">Notre approche</div>
+        <h2>Une résolution à deux niveaux imbriqués</h2>
+        <p class="section-intro">Combiner un algorithme d'exploration intelligent (méta-heuristique) avec un solveur de tournées de référence (VROOM) pour converger rapidement vers la meilleure solution.</p>
+
+        <div class="grid-2" style="margin-top: 50px;">
+            <div class="card card-dark">
+                <div style="font-size: 0.75em; font-weight: 600; color: var(--sf-blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">Niveau strategique</div>
+                <h4 style="font-size: 1.3em; margin-bottom: 12px;">Algorithme Génétique</h4>
+                <p>Explore l'espace des ventilations (affectation produit/cuve) en s'inspirant de l'évolution naturelle. Les meilleures solutions survivent, se croisent et mutent pour produire des candidats toujours meilleurs.</p>
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
+                    <p style="font-size: 0.8em; color: rgba(255,255,255,0.4);">Population: 25 individus | 15 générations | Mutation: 30%</p>
+                </div>
+            </div>
+            <div class="card card-dark">
+                <div style="font-size: 0.75em; font-weight: 600; color: var(--sf-orange); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">Niveau operationnel</div>
+                <h4 style="font-size: 1.3em; margin-bottom: 12px;">Solveur VROOM</h4>
+                <p>Pour chaque ventilation candidate, VROOM calcule les tournées optimales en tenant compte de toutes les contraintes (capacités, horaires, multi-dépôts). Il retourne un plan précis avec géométrie de route.</p>
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
+                    <p style="font-size: 0.8em; color: rgba(255,255,255,0.4);">Temps par évaluation: ~2-3 sec | Profil poids-lourd | Multi-dépôts</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 40px 0 20px; color: rgba(255,255,255,0.25); font-size: 0.9em;">
+            &#8595; L'AG soumet une ventilation &rarr; VROOM retourne un score &rarr; L'AG évolue &#8593;
+        </div>
+
+        <div class="callout" style="background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.3);">
+            <div class="callout-icon">&#10003;</div>
+            <p style="color: rgba(255,255,255,0.85);"><strong style="color: white;">Pourquoi cette combinaison ?</strong> L'AG seul ne sait pas router. VROOM seul ne sait pas choisir la ventilation. Ensemble, ils résolvent le problème complet en temps réel — là où une approche brute-force prendrait des heures.</p>
+        </div>
+    </div>
+</div>
+
+<!-- ============================= ARCHITECTURE ============================= -->
+<section id="architecture">
+    <div class="section-label">Architecture technique</div>
+    <h2>Tout fonctionne dans Snowflake, zéro infrastructure externe</h2>
+    <p class="section-intro">Chaque brique est déployée en tant que service managé — pas de serveur à provisionner, patcher ou surveiller.</p>
+
+    <div class="arch-diagram">
+        <div class="arch-layer">
+            <div class="arch-label">Donnees</div>
+            <div class="arch-node arch-node-blue">Depots</div>
+            <div class="arch-node arch-node-blue">Camions</div>
+            <div class="arch-node arch-node-blue">Capacites</div>
+            <div class="arch-node arch-node-blue">Commandes</div>
+            <div class="arch-node arch-node-green">Resultats</div>
+        </div>
+        <div class="arch-arrow-down">&#8595;</div>
+        <div class="arch-layer">
+            <div class="arch-label">Orchestration</div>
+            <div class="arch-node arch-node-bright">Stored Procedure Python</div>
+            <span style="color: rgba(255,255,255,0.3); font-size: 0.85em;">lance l'optimisation &amp; stocke les résultats</span>
+        </div>
+        <div class="arch-arrow-down">&#8595; &#8593;</div>
+        <div class="arch-layer">
+            <div class="arch-label">Calcul (SPCS)</div>
+            <div class="arch-node arch-node-orange">Algorithme Genetique</div>
+            <span style="color: rgba(255,255,255,0.2);">&harr;</span>
+            <div class="arch-node arch-node-orange">VROOM (VRP)</div>
+            <span style="color: rgba(255,255,255,0.2);">&harr;</span>
+            <div class="arch-node arch-node-orange">OpenRouteService (PL)</div>
+        </div>
+        <div class="arch-arrow-down">&#8595;</div>
+        <div class="arch-layer">
+            <div class="arch-label">Analytique</div>
+            <div class="arch-node arch-node-purple">Vues SQL geospatiales</div>
+            <span style="color: rgba(255,255,255,0.3); font-size: 0.85em;">km exacts via ST_DISTANCE sur polylignes</span>
+        </div>
+        <div class="arch-arrow-down">&#8595;</div>
+        <div class="arch-layer">
+            <div class="arch-label">Interface</div>
+            <div class="arch-node arch-node-green">Application Web (SPCS)</div>
+            <span style="color: rgba(255,255,255,0.3); font-size: 0.85em;">Carte + KPIs + Planning + Ventilation</span>
+        </div>
+    </div>
+
+    <h3 style="font-size: 1.4em; font-weight: 700; margin: 50px 0 24px;">Détail des services conteneurisés</h3>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-icon card-icon-orange">&#127757;</div>
+            <h4>OpenRouteService</h4>
+            <p>Moteur de routing poids-lourd basé sur les données OpenStreetMap. Connaît les restrictions réelles du réseau : tonnage max des ponts, hauteur des tunnels, zones interdites PL. Profil <code>driving-hgv</code>.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon card-icon-green">&#128736;</div>
+            <h4>VROOM (Vehicle Routing Problem)</h4>
+            <p>Solveur open-source de référence pour l'optimisation de tournées. Gère les capacités multi-dimensionnelles, fenêtres horaires, skills véhicule et multi-dépôts en temps quasi-réel.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon card-icon-blue">&#128268;</div>
+            <h4>Routing Gateway</h4>
+            <p>Reverse proxy intelligent qui route les requêtes vers la bonne instance régionale d'ORS. Permet de couvrir plusieurs zones géographiques avec un seul point d'entrée.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon card-icon-purple">&#128187;</div>
+            <h4>Application Web</h4>
+            <p>Dashboard interactif (Next.js) avec carte des itinéraires, KPIs en temps réel, timeline de planning, et panneau de ventilation cuves. Hébergé sur SPCS, accessible via navigateur.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ============================= ALGORITHME ============================= -->
+<div class="dark-section" id="algorithme">
+    <div class="inner">
+        <div class="section-label">Logique algorithmique</div>
+        <h2>Comment le système explore les solutions optimales</h2>
+        <p class="section-intro">Un processus itératif inspiré de l'évolution naturelle : les meilleurs plans de ventilation "survivent" et se combinent pour produire des plans encore meilleurs.</p>
+
+        <div class="feature-block" style="margin-top: 60px;">
+            <div class="feature-text">
+                <h3 style="color: white;">Le cycle génétique en 5 étapes</h3>
+                <div class="steps" style="margin-top: 30px;">
+                    <div class="step">
+                        <h4 style="color: white;">Population initiale (25 individus)</h4>
+                        <p style="color: rgba(255,255,255,0.55);">3 heuristiques intelligentes (grosse demande d'abord, petite demande d'abord, max commandes d'abord) + des variantes aléatoires pour diversifier l'exploration.</p>
+                    </div>
+                    <div class="step">
+                        <h4 style="color: white;">Évaluation par VROOM</h4>
+                        <p style="color: rgba(255,255,255,0.55);">Chaque ventilation candidate est transformée en requête VROOM. Le solveur retourne les tournées optimales et un score global.</p>
+                    </div>
+                    <div class="step">
+                        <h4 style="color: white;">Sélection &amp; élitisme</h4>
+                        <p style="color: rgba(255,255,255,0.55);">Les 3 meilleurs individus sont conservés tels quels (élitisme). Le reste est sélectionné par tournoi parmi la moitié supérieure de la population.</p>
+                    </div>
+                    <div class="step">
+                        <h4 style="color: white;">Crossover (croisement)</h4>
+                        <p style="color: rgba(255,255,255,0.55);">Pour chaque camion, on prend la ventilation du parent 1 ou 2 (50/50). Combine les forces de deux bonnes solutions en une seule nouvelle.</p>
+                    </div>
+                    <div class="step">
+                        <h4 style="color: white;">Mutation (30%)</h4>
+                        <p style="color: rgba(255,255,255,0.55);">Swap aléatoire de produits entre cuves, ou réassignation vers un produit en demande non couvert. Maintient la diversité et évite les minimums locaux.</p>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="ga-visual" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                    <h4 style="color: white; margin-bottom: 20px; font-size: 0.95em;">Convergence typique du score</h4>
+                    <div class="ga-bar-row">
+                        <div class="ga-bar-label" style="color: rgba(255,255,255,0.4);">Gen 1</div>
+                        <div class="ga-bar-track" style="background: rgba(255,255,255,0.05);">
+                            <div class="ga-bar-fill" style="width: 100%; background: linear-gradient(90deg, #EF4444, #F97316);">2 056 km</div>
+                        </div>
+                    </div>
+                    <div class="ga-bar-row">
+                        <div class="ga-bar-label" style="color: rgba(255,255,255,0.4);">Gen 4</div>
+                        <div class="ga-bar-track" style="background: rgba(255,255,255,0.05);">
+                            <div class="ga-bar-fill" style="width: 82%; background: linear-gradient(90deg, #F97316, #F59E0B);">1 780 km</div>
+                        </div>
+                    </div>
+                    <div class="ga-bar-row">
+                        <div class="ga-bar-label" style="color: rgba(255,255,255,0.4);">Gen 8</div>
+                        <div class="ga-bar-track" style="background: rgba(255,255,255,0.05);">
+                            <div class="ga-bar-fill" style="width: 70%; background: linear-gradient(90deg, #F59E0B, #84CC16);">1 620 km</div>
+                        </div>
+                    </div>
+                    <div class="ga-bar-row">
+                        <div class="ga-bar-label" style="color: rgba(255,255,255,0.4);">Gen 12</div>
+                        <div class="ga-bar-track" style="background: rgba(255,255,255,0.05);">
+                            <div class="ga-bar-fill" style="width: 63%; background: linear-gradient(90deg, #84CC16, #10B981);">1 540 km</div>
+                        </div>
+                    </div>
+                    <div class="ga-bar-row">
+                        <div class="ga-bar-label" style="color: rgba(255,255,255,0.4);">Gen 15</div>
+                        <div class="ga-bar-track" style="background: rgba(255,255,255,0.05);">
+                            <div class="ga-bar-fill" style="width: 58%; background: var(--sf-green);">1 500 km</div>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.78em; color: rgba(255,255,255,0.3); margin-top: 18px; text-align: center;">Scénario 60 commandes — convergence en 15 générations (~375 évaluations)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scoring -->
+        <div style="margin-top: 80px;">
+            <h3 style="color: white; font-size: 1.5em; margin-bottom: 16px;">Fonction de score : équilibrer km et taux de service</h3>
+            <p style="color: rgba(255,255,255,0.55); margin-bottom: 30px; max-width: 700px;">Le score guide l'algorithme vers des solutions qui minimisent les km parcourus tout en maximisant le nombre de livraisons réalisées.</p>
+        </div>
+
+        <div class="formula-box" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+            <div class="formula">Score = <span>Distance_km</span> + Nb_non_livrees &times; <span>80 km</span></div>
+            <div class="formula-desc">Chaque commande non servie pénalise de 80 km — l'algorithme préfère faire un détour plutôt que d'abandonner une livraison</div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 30px;">
+            <div class="card card-dark">
+                <h4 style="color: var(--sf-blue);">Distance réelle</h4>
+                <p>Calculée par somme des segments sur la géométrie de route retournée par ORS. Ce sont les km réels sur le réseau routier PL — pas une approximation à vol d'oiseau.</p>
+            </div>
+            <div class="card card-dark">
+                <h4 style="color: var(--sf-orange);">Pénalité 80 km</h4>
+                <p>Paramètre métier ajustable. Signifie : "on est prêt à faire jusqu'à 80 km de détour pour ne pas manquer une livraison". Traduit la stratégie commerciale en contrainte mathématique.</p>
+            </div>
+        </div>
+
+        <!-- Multi-tour -->
+        <div style="margin-top: 80px;">
+            <h3 style="color: white; font-size: 1.5em; margin-bottom: 16px;">Multi-tours : maximiser l'utilisation de la flotte</h3>
+            <p style="color: rgba(255,255,255,0.55); margin-bottom: 30px; max-width: 700px;">Un camion ne fait pas qu'un seul aller-retour par jour. Le système planifie automatiquement les tours successifs avec re-ventilation intelligente.</p>
+        </div>
+
+        <div class="flow" style="justify-content: center;">
+            <div class="flow-item active" style="border: none;">Départ dépôt (6h)</div>
+            <div class="flow-arrow" style="color: rgba(255,255,255,0.3);">&rarr;</div>
+            <div class="flow-item" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7);">Tour 1 : 3-5 clients</div>
+            <div class="flow-arrow" style="color: rgba(255,255,255,0.3);">&rarr;</div>
+            <div class="flow-item" style="background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); color: var(--sf-orange);">Retour dépôt + rechargement (~1h)</div>
+            <div class="flow-arrow" style="color: rgba(255,255,255,0.3);">&rarr;</div>
+            <div class="flow-item active" style="border: none;">Tour 2 : 2-3 clients</div>
+            <div class="flow-arrow" style="color: rgba(255,255,255,0.3);">&rarr;</div>
+            <div class="flow-item" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7);">Retour dépôt (fin de journée)</div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 30px;">
+            <div class="card card-dark">
+                <h4 style="color: white;">Re-ventilation adaptative</h4>
+                <p>Entre les tours, les cuves sont rechargées avec les produits correspondant spécifiquement aux commandes non encore servies. Le chargement est optimisé pour le contexte restant, pas copié du tour précédent.</p>
+            </div>
+            <div class="card card-dark">
+                <h4 style="color: white;">Conditions d'arrêt</h4>
+                <p>Le processus s'arrête quand : toutes les commandes sont servies, aucun véhicule ne peut repartir avant la fin de journée, le tour supplémentaire n'améliore pas le score, ou le maximum de 5 tours est atteint.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================= CONTRAINTES (table) ============================= -->
+<section>
+    <div class="section-label">Modélisation</div>
+    <h2>Contraintes métier intégralement modélisées</h2>
+    <p class="section-intro">L'ensemble des règles terrain est traduit en paramètres mathématiques pour le solveur — rien n'est laissé au hasard.</p>
+
+    <table class="comparison-table">
+        <thead>
+            <tr>
+                <th>Contrainte metier</th>
+                <th>Implementation technique</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Multi-compartiments (3-5 cuves/camion)</strong></td>
+                <td>Vecteur de capacité à 8 dimensions dans VROOM (un slot par produit)</td>
+                <td><span class="badge badge-green">Capacité</span></td>
+            </tr>
+            <tr>
+                <td><strong>Compatibilité produits</strong></td>
+                <td>Matrice de compatibilité : SP95 en cuve dédiée, autres interchangeables</td>
+                <td><span class="badge badge-red">Sécurité</span></td>
+            </tr>
+            <tr>
+                <td><strong>Fenêtres horaires clients</strong></td>
+                <td>time_windows VROOM sur chaque job (début, fin en secondes)</td>
+                <td><span class="badge badge-green">Service</span></td>
+            </tr>
+            <tr>
+                <td><strong>Amplitude de travail (8h max)</strong></td>
+                <td>time_window véhicule [06:00 — 14:00] (21600s — 50400s)</td>
+                <td><span class="badge badge-red">Légal</span></td>
+            </tr>
+            <tr>
+                <td><strong>Restrictions réseau PL</strong></td>
+                <td>Profil driving-hgv ORS (tonnage, hauteur, largeur via OSM)</td>
+                <td><span class="badge badge-red">Sécurité</span></td>
+            </tr>
+            <tr>
+                <td><strong>Temps de déchargement</strong></td>
+                <td>Service time = volume / 500L/min (3 min par m&sup3;)</td>
+                <td><span class="badge badge-green">Opérationnel</span></td>
+            </tr>
+            <tr>
+                <td><strong>Temps de chargement au dépôt</strong></td>
+                <td>3 min par m&sup3; ajouté au départ de chaque tour suivant</td>
+                <td><span class="badge badge-green">Opérationnel</span></td>
+            </tr>
+            <tr>
+                <td><strong>Multi-dépôts</strong></td>
+                <td>Chaque véhicule VROOM déclare son dépôt de départ/retour distinct</td>
+                <td><span class="badge badge-green">Logistique</span></td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- ============================= RESULTATS ============================= -->
+<section id="resultats">
+    <div class="section-label">Résultats démontrés</div>
+    <h2>Performance mesurée sur scénarios représentatifs</h2>
+    <p class="section-intro">Des gains significatifs obtenus grâce à l'optimisation combinée de la ventilation, du routing et des multi-tours — même matériel, même flotte, même nombre de camions.</p>
+
+    <div style="margin-top: 50px;">
+        <h3 style="font-size: 1.2em; font-weight: 600; color: var(--sf-gray-500); margin-bottom: 20px;">Scénario jour type (25 commandes, 5 camions)</h3>
+        <div class="results-block">
+            <div class="result-box before">
+                <div class="result-box-label">Planification naïve</div>
+                <div class="result-box-value">873 km</div>
+            </div>
+            <div class="result-vs">&rarr;</div>
+            <div class="result-box after">
+                <div class="result-box-label">Planification optimisée</div>
+                <div class="result-box-value">472 km</div>
+            </div>
+        </div>
+        <div class="result-gain">
+            <div class="result-gain-value">-46%</div>
+            <div class="result-gain-label">de kilomètres — grâce à l'optimisation de la ventilation et du routing</div>
+        </div>
+    </div>
+
+    <div style="margin-top: 70px;">
+        <h3 style="font-size: 1.2em; font-weight: 600; color: var(--sf-gray-500); margin-bottom: 20px;">Scénario jour chargé (60 commandes, 8 camions, multi-tours)</h3>
+        <div class="results-block">
+            <div class="result-box before">
+                <div class="result-box-label">Planification naïve</div>
+                <div class="result-box-value">2 056 km</div>
+            </div>
+            <div class="result-vs">&rarr;</div>
+            <div class="result-box after">
+                <div class="result-box-label">Planification optimisée</div>
+                <div class="result-box-value">1 500 km</div>
+            </div>
+        </div>
+        <div class="result-gain">
+            <div class="result-gain-value">-27%</div>
+            <div class="result-gain-label">de kilomètres + 4 livraisons supplémentaires par jour</div>
+        </div>
+    </div>
+
+    <div class="metric-row" style="margin-top: 60px;">
+        <div class="metric-card">
+            <div class="metric-card-value" style="color: var(--sf-green);">-556 km</div>
+            <div class="metric-card-label">Économies / jour (S2)</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-card-value" style="color: var(--sf-blue);">14</div>
+            <div class="metric-card-label">Routes planifiées (S2)</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-card-value" style="color: var(--sf-orange);">~375</div>
+            <div class="metric-card-label">Combinaisons testées</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-card-value" style="color: var(--sf-purple);">&lt;5 min</div>
+            <div class="metric-card-label">Temps calcul total</div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================= SNOWFLAKE AVANTAGES ============================= -->
+<div class="dark-section" id="snowflake">
+    <div class="inner">
+        <div class="section-label">Avantages plateforme</div>
+        <h2>Pourquoi Snowflake est idéal pour ce type de solution</h2>
+        <p class="section-intro">Les projets d'optimisation logistique échouent souvent à cause de l'infrastructure — pas de l'algorithme. Snowflake élimine cette friction.</p>
+
+        <div class="grid-2" style="margin-top: 50px; gap: 30px;">
+            <div class="card card-dark" style="padding: 40px;">
+                <div style="font-size: 2em; margin-bottom: 16px;">&#9729;</div>
+                <h4 style="color: var(--sf-blue); font-size: 1.2em; margin-bottom: 14px;">Containers fully managed (SPCS)</h4>
+                <p style="font-size: 0.95em;">ORS et VROOM tournent sur <strong>Snowpark Container Services</strong> : déploiement d'un conteneur Docker en une commande. Snowflake gère le cycle de vie complet — scaling, networking interne, haute disponibilité, monitoring. Zéro Kubernetes à opérer, zéro DevOps dédié.</p>
+                <div style="margin-top: 16px; padding: 12px 16px; background: rgba(41,181,232,0.08); border-radius: 8px;">
+                    <p style="font-size: 0.82em; color: var(--sf-blue); margin: 0;">Équivalent à un cluster managé... sans la complexité d'un cluster.</p>
+                </div>
+            </div>
+            <div class="card card-dark" style="padding: 40px;">
+                <div style="font-size: 2em; margin-bottom: 16px;">&#128274;</div>
+                <h4 style="color: var(--sf-blue); font-size: 1.2em; margin-bottom: 14px;">Les données ne sortent jamais</h4>
+                <p style="font-size: 0.95em;">Les commandes clients (volumes, adresses, horaires) restent <strong>intégralement dans Snowflake</strong>. Aucun appel API externe, aucun transfert vers Google, Azure ou un service tiers. Les conteneurs SPCS lisent directement les tables via le réseau interne Snowflake.</p>
+                <div style="margin-top: 16px; padding: 12px 16px; background: rgba(41,181,232,0.08); border-radius: 8px;">
+                    <p style="font-size: 0.82em; color: var(--sf-blue); margin: 0;">RGPD natif. Zéro risque de fuite de données sensibles commerciales.</p>
+                </div>
+            </div>
+            <div class="card card-dark" style="padding: 40px;">
+                <div style="font-size: 2em; margin-bottom: 16px;">&#127758;</div>
+                <h4 style="color: var(--sf-blue); font-size: 1.2em; margin-bottom: 14px;">Fonctions geospatiales natives</h4>
+                <p style="font-size: 0.95em;">Snowflake calcule les KPIs de distance <strong>directement en SQL</strong> : <code style="color: var(--sf-blue);">ST_DISTANCE</code>, <code style="color: var(--sf-blue);">ST_MAKEPOINT</code>, analyse de géométries de routes. Les vues analytiques décomposent les polylignes en segments et somment les distances géodésiques — sans PostGIS ni librairie externe.</p>
+                <div style="margin-top: 16px; padding: 12px 16px; background: rgba(41,181,232,0.08); border-radius: 8px;">
+                    <p style="font-size: 0.82em; color: var(--sf-blue); margin: 0;">KPIs de distance au mètre près, recalculables à la volée sur n'importe quel périmètre.</p>
+                </div>
+            </div>
+            <div class="card card-dark" style="padding: 40px;">
+                <div style="font-size: 2em; margin-bottom: 16px;">&#129302;</div>
+                <h4 style="color: var(--sf-blue); font-size: 1.2em; margin-bottom: 14px;">Cortex AI & Agents</h4>
+                <p style="font-size: 0.95em;">Perspective : un <strong>agent conversationnel Cortex</strong> permettrait aux planificateurs d'interroger les résultats en langage naturel : "Pourquoi ce client n'a pas été livré ?", "Que se passe-t-il si j'ajoute un camion ?", "Montre-moi les tournées de la semaine dernière".</p>
+                <div style="margin-top: 16px; padding: 12px 16px; background: rgba(41,181,232,0.08); border-radius: 8px;">
+                    <p style="font-size: 0.82em; color: var(--sf-blue); margin: 0;">L'IA au service de la prise de décision opérationnelle — sans compétence SQL requise.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison table -->
+        <div style="margin-top: 70px;">
+            <h3 style="color: white; font-size: 1.4em; margin-bottom: 24px;">Comparaison vs. approche classique</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Critere</th>
+                        <th>Approche classique (DIY Cloud)</th>
+                        <th>Approche Snowflake</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Infrastructure routing</strong></td>
+                        <td>VM / Kubernetes + ORS à configurer et maintenir</td>
+                        <td>SPCS fully managed, 1 commande</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Securite donnees</strong></td>
+                        <td>Données copiées vers API externe</td>
+                        <td>Zéro exfiltration, tout en interne</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Calcul distances</strong></td>
+                        <td>PostGIS + pipelines dédiés</td>
+                        <td>ST_DISTANCE natif dans vues SQL</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Connexion donnees</strong></td>
+                        <td>Pipeline ETL pour alimenter l'optimiseur</td>
+                        <td>Lecture directe des tables, zéro copie</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cout quand inactif</strong></td>
+                        <td>VMs allumées 24/7 (~200-500$/mois)</td>
+                        <td>0$ — paiement à l'usage uniquement</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Time-to-market</strong></td>
+                        <td>3-6 mois (infra + sécu + monitoring)</td>
+                        <td>Quelques semaines (focus sur le métier)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gouvernance</strong></td>
+                        <td>À construire (logs, RBAC, audit)</td>
+                        <td>Native (roles, audit trail, versioning)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bonus points -->
+        <div class="grid-3" style="margin-top: 50px;">
+            <div class="card card-dark">
+                <h4 style="color: white; font-size: 0.95em;">&#128209; Audit trail complet</h4>
+                <p>Chaque optimisation versionnée avec timestamp et paramètres. Historique requêtable en SQL.</p>
+            </div>
+            <div class="card card-dark">
+                <h4 style="color: white; font-size: 0.95em;">&#128200; Scalable sans friction</h4>
+                <p>60 ou 600 commandes = même architecture. Le compute pool s'adapte à la charge.</p>
+            </div>
+            <div class="card card-dark">
+                <h4 style="color: white; font-size: 0.95em;">&#128190; SQL accessible</h4>
+                <p><code style="color: var(--sf-blue);">CALL OPTIMIZE_ROUTES('france', 10, TRUE)</code> — déclenchable depuis un worksheet par tout analyste.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================= FOOTER ============================= -->
+<footer>
+    <svg width="50" height="50" viewBox="0 0 100 100" fill="none" style="margin-bottom: 30px;">
+        <path d="M50 10 L50 90 M15 30 L85 70 M15 70 L85 30" stroke="rgba(255,255,255,0.3)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="50" cy="10" r="4" fill="rgba(255,255,255,0.3)"/>
+        <circle cx="50" cy="90" r="4" fill="rgba(255,255,255,0.3)"/>
+        <circle cx="15" cy="30" r="4" fill="rgba(255,255,255,0.3)"/>
+        <circle cx="85" cy="70" r="4" fill="rgba(255,255,255,0.3)"/>
+        <circle cx="15" cy="70" r="4" fill="rgba(255,255,255,0.3)"/>
+        <circle cx="85" cy="30" r="4" fill="rgba(255,255,255,0.3)"/>
+        <circle cx="50" cy="50" r="6" fill="var(--sf-blue)"/>
+    </svg>
+    <h2>Optimiser. Réduire. Servir plus.</h2>
+    <p>Une solution cloud-native qui transforme la planification logistique — de l'artisanal à l'algorithmique, sans rien changer à l'infrastructure.</p>
+    <div class="footer-tags">
+        <span class="footer-tag">Snowpark Container Services</span>
+        <span class="footer-tag">OpenRouteService</span>
+        <span class="footer-tag">VROOM</span>
+        <span class="footer-tag">Algorithme Génétique</span>
+        <span class="footer-tag">Geospatial</span>
+        <span class="footer-tag">Cortex AI</span>
+    </div>
+</footer>
+
+<!-- ===== SCROLL SPY ===== -->
+<script>
+    const dots = document.querySelectorAll('.nav-dot');
+    const sections = ['hero', 'enjeux', 'demarche', 'architecture', 'algorithme', 'resultats', 'snowflake'];
+    
+    window.addEventListener('scroll', () => {
+        const scrollPos = window.scrollY + window.innerHeight / 3;
+        let activeIdx = 0;
+        sections.forEach((id, i) => {
+            const el = document.getElementById(id);
+            if (el && el.offsetTop <= scrollPos) activeIdx = i;
+        });
+        dots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+    });
+</script>
+
+</body>
+</html>

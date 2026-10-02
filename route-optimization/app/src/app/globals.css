@@ -1,0 +1,15 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+body {
+  font-family: Arial, sans-serif;
+  background: #0a0e1a;
+  color: #fff;
+}
+
+.delay-150 {
+  animation-delay: 150ms;
+}
+.delay-300 {
+  animation-delay: 300ms;
+}

@@ -1,0 +1,26 @@
+ID_COMMANDE,CLIENT,LIEU_LIVRAISON,ADRESSE,VILLE,CP,LON,LAT,PRODUIT,QTE_LITRES,HEURE_LIVRAISON,DEPOT_CHARGEMENT,ZONE
+001,Chantier Autoroute A1,Travaux autoroute,RN1,Roissy,95700,2.515,48.981,GNR,2000,,1,IDF
+002,BTP Alpha,Chantier ZAC,Rue des Acacias,Argenteuil,95100,2.253,48.947,GNR,1500,,1,IDF
+003,Carriere Nord,Carriere calcaire,RD,Chantilly,60500,2.471,49.194,GNR,5000,,5,PICARDIE
+004,Exploit. Agricole,Ferme cereales,Route de Meaux,Pont-Ste-Maxence,60700,2.604,49.302,GNR,3000,,3,PICARDIE
+005,TP Martin,Chantier T4,Av Jean Jaures,Bondy,93140,2.489,48.893,GNR,1200,,4,IDF
+006,Voirie Beta IDF,Voirie,Bd Peripherique,Ivry-sur-Seine,94200,2.384,48.816,GNR,2500,,2,IDF
+007,TP Gamma,Grand Paris,Gare Vitry,Vitry-sur-Seine,94400,2.392,48.787,GNR,1800,,2,IDF
+008,Chantier LGV,Base travaux,Zone logistique,Verberie,60410,2.731,49.32,GNR,4000,0800,3,PICARDIE
+009,Location Engins,Base location,ZI,Nogent-sur-Oise,60180,2.468,49.273,GNR,2500,,5,PICARDIE
+010,Exploit. Betterave,Cooperative,Route sucrerie,Estrées-St-Denis,60190,2.643,49.428,GNR,1000,,3,PICARDIE
+011,Mairie Montataire,Voirie,Rue Victor Hugo,Montataire,60160,2.439,49.258,GNR,800,,5,PICARDIE
+012,SARL Travaux 77,Depot engins,Parc Activites,Torcy,77200,2.656,48.849,Traction Force Plus,2500,,4,IDF
+013,SNC Terrassement,Terrassement,Allee Peupliers,Noisy-le-Grand,93160,2.552,48.848,Traction Force Plus,3000,,4,IDF
+014,Enrobes Delta,Enrobes,Centrale enrobage,Méru,60110,2.133,49.235,Traction Force Plus,2000,,5,PICARDIE
+015,Groupe Epsilon,Base chantier,Bd Europe,Massy,91300,2.271,48.726,Traction Force Plus,4000,,2,IDF
+016,Voirie Zeta,Voirie,Zone commerciale,Chambly,60230,2.247,49.167,Traction Force Plus,3500,,5,PICARDIE
+017,TP Gamma Noyon,Chantier batiment,Av Liberation,Noyon,60400,2.998,49.578,Traction Force Plus,1800,,3,PICARDIE
+018,Station Independante A,Station-service,RN 31,Clermont,60600,2.42,49.375,Gazole,8000,0700,3,PICARDIE
+019,Station Autoroute B,Station autoroute,Aire de Roissy,Roissy-en-France,95700,2.542,49.002,Gazole,12000,0800,1,IDF
+020,Station Orly C,Station-service,Av Aeroport,Orly,94310,2.365,48.747,Gazole,6000,,2,IDF
+021,Residence Les Lilas,Chaufferie,Rue Victor Hugo,Les Lilas,93260,2.422,48.879,Fioul Domestique,2000,,4,IDF
+022,EHPAD Les Tilleuls,Chaufferie,Rue des Tilleuls,Senlis,60300,2.592,49.211,Fioul Domestique,1500,,5,PICARDIE
+023,Piscine municipale,Chaufferie,Av Stade,Nogent-sur-Oise,60180,2.47,49.275,Fioul Domestique,1000,,5,PICARDIE
+024,Station Pantin D,Station-service,Av Jean Lolive,Pantin,93500,2.404,48.893,SP95,5000,0700,1,IDF
+025,Flotte Bus Urbaine,Depot bus,Rue du Depot,Thiais,94320,2.392,48.763,HVO Non Routier,3000,,2,IDF

@@ -1,0 +1,23 @@
+# Dependencies
+app/node_modules/
+app/.next/
+
+# Secrets
+app/.env.local
+**/.streamlit/secrets.toml
+
+# Build artifacts
+__pycache__/
+*.pyc
+.DS_Store
+
+# Logs
+*.log
+app/snowflake.log
+
+# Generated
+deploy/service_spec.yaml
+
+# IDE
+.vscode/
+.idea/
